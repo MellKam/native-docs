@@ -1,0 +1,29 @@
+---
+import type { GetStaticPaths } from "astro";
+import { hashToNativeMap } from "@/services/natives";
+import natives from "@public/natives.json";
+import Layout from "@/layout/Layout.astro";
+
+export const getStaticPaths = (() => {
+	return Object.entries(natives).flatMap(([_namespace, namespaceItems]) => {
+		return Object.keys(namespaceItems).map((hash) => {
+			return { params: { hash } };
+		});
+	});
+}) satisfies GetStaticPaths;
+
+export const prerender = true;
+
+const hash = Astro.params.hash!;
+
+const native = hashToNativeMap.get(hash);
+if (!native) {
+	return Astro.redirect("/404");
+}
+---
+
+<Layout
+	title={`alt:V NativeDB - ${native.altName}`}
+	description=""
+	keywords=""
+/>

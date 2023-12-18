@@ -1,74 +1,148 @@
 <script setup lang="ts">
 import { searchNativesQueryOptions } from "@/services/search";
-import { useQuery } from "@tanstack/vue-query";
+import { useQuery, queryOptions } from "@tanstack/vue-query";
 import { ref, computed } from "vue";
-import SearchMdIcon from "@/icons/search-md.svg?component";
-import BackspaceIcon from "@/icons/backspace.svg?component";
-import ClockRewindIcon from "@/icons/clock-rewind.svg?component";
+// import ClockRewindIcon from "@/icons/clock-rewind.svg?component";
+import ArrowUpIcon from "@/icons/arrow-up.svg?component";
+import EnterIcon from "@/icons/enter.svg?component";
 import CubeIcon from "@/icons/cube.svg?component";
+import {
+	Command,
+	CommandInput,
+	CommandList,
+	CommandItem,
+	CommandEmpty,
+	CommandGroup,
+} from "@/components/ui/command";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useDebounceFn } from "@vueuse/core";
+import type { Native } from "@public/natives.json";
+import type { MatchInfo } from "minisearch";
 
-const query = ref("");
+const searchTerm = ref("");
+const setSearchTermWithDebounce = useDebounceFn((value: string) => {
+	searchTerm.value = value;
+}, 250);
 
 const { data: searchResults } = useQuery(
 	computed(() => {
-		console.log(query.value);
-		return {
-			...searchNativesQueryOptions({ query: query.value }),
-			enabled: query.value !== "",
-		};
+		return queryOptions({
+			...searchNativesQueryOptions({ query: searchTerm.value }),
+			enabled: searchTerm.value !== "",
+			placeholderData: (previousData) => previousData,
+		});
 	}),
 );
 
-const isFocused = ref(false);
+const getMarkedFieldValue = (
+	match: {
+		native: Native & {
+			namespace: string;
+		};
+		id: any;
+		terms: string[];
+		queryTerms: string[];
+		score: number;
+		match: MatchInfo;
+	},
+	fieldName: "name" | "altName",
+) => {
+	const fields = new Set(Object.values(match.match).flatMap((match) => match));
+	if (!fields.has(fieldName)) {
+		return match.native[fieldName];
+	}
+	return match.native[fieldName].replaceAll(
+		new RegExp("(" + match.queryTerms.join("|") + ")", "ig"),
+		"<mark>$1</mark>",
+	);
+};
+
+const isOpen = ref(false);
 </script>
 
 <template>
-	<div class="flex flex-col bg-stone-700 px-3 pb-6 pt-3">
-		<div
-			class="flex justify-between rounded-md border border-stone-500 bg-stone-900 px-4 py-1.5 ring-0 ring-green-400/[.15] transition-[box-shadow,border] data-[focused=true]:border-green-200 data-[focused=true]:ring-4"
-			:data-focused="isFocused"
-		>
-			<div class="flex w-full items-center gap-2">
-				<SearchMdIcon class="h-[22px] w-[22px] stroke-[1.5] text-white/50" />
-				<input
-					type="text"
-					@focus="isFocused = true"
-					@blur="isFocused = false"
-					autocomplete="off"
-					v-model="query"
-					placeholder="Search"
-					class="h-10 w-full border-none bg-transparent text-lg text-white outline-none placeholder:text-white/60"
-				/>
-			</div>
-			<button @click="query = ''" v-if="query">
-				<BackspaceIcon class="h-6 w-6 stroke-[1.5] text-white/50" />
-			</button>
-		</div>
-
-		<div>
-			<span class="text-[13px] font-medium leading-5 text-green-200"
-				>Recent</span
+	<button @click="isOpen = true">Open</button>
+	<Dialog v-model:open="isOpen">
+		<DialogContent class="overflow-hidden border-white/10 p-0">
+			<Command
+				@update:search-term="
+					(value) => {
+						if (value === '') {
+							searchTerm = '';
+						} else {
+							setSearchTermWithDebounce(value);
+						}
+					}
+				"
+				:model-value="searchTerm"
+				class="min-h-[340px] rounded-none px-3 pb-5 pt-3"
+				:filter-function="(values) => values"
 			>
-			<ol class="flex flex-col gap-1">
-				<li v-for="native in searchResults">
-					<a
-						:href="`/${native.hash}`"
-						class="block rounded-md bg-white/[.04] px-3 py-2 transition-colors hover:bg-white/[.08]"
+				<CommandInput :model-value="searchTerm" />
+				<CommandList v-if="searchTerm !== ''" class="mt-1.5">
+					<CommandEmpty> Empty </CommandEmpty>
+					<CommandGroup
+						heading="Functions"
+						class="flex flex-col p-0"
+						v-if="searchResults?.length"
 					>
-						<div class="inline-flex items-center gap-3">
-							<CubeIcon class="h-6 w-6 stroke-[1.5] text-[#B180D7]" />
-							<div class="inline-flex flex-col">
-								<span class="text-sm font-medium text-white">{{
-									native.altName
-								}}</span>
-								<span class="text-xs leading-5 tracking-wide text-white/75">{{
-									native.namespace
-								}}</span>
+						<CommandItem
+							as="a"
+							v-for="searchResult in searchResults"
+							:href="`/${searchResult.id}`"
+							:value="searchResult.id"
+							:key="searchResult.id"
+							class="mb-1 flex cursor-pointer items-center gap-3 last:mb-0"
+						>
+							<CubeIcon
+								aria-hidden="true"
+								class="h-6 w-6 shrink-0 select-none stroke-[1.5] text-[#B180D7]"
+							/>
+							<div class="flex flex-[0_0_auto] flex-col">
+								<p
+									class="truncate text-sm font-medium text-white [&>mark]:rounded-sm [&>mark]:bg-green-200/80"
+									v-html="getMarkedFieldValue(searchResult, 'name')"
+								></p>
+								<span
+									class="text-xs leading-5 tracking-wide text-white/75 [&>mark]:bg-transparent [&>mark]:text-white/75 [&>mark]:underline [&>mark]:underline-offset-2"
+									v-html="getMarkedFieldValue(searchResult, 'altName')"
+								></span>
 							</div>
-						</div>
-					</a>
-				</li>
-			</ol>
-		</div>
-	</div>
+						</CommandItem>
+					</CommandGroup>
+				</CommandList>
+			</Command>
+			<div
+				class="hidden gap-3 border-t border-white/10 bg-stone-900 p-3 sm:flex"
+			>
+				<div class="flex items-center">
+					<div class="mr-1 rounded bg-white/10 px-1.5 py-[3px]">
+						<ArrowUpIcon
+							class="h-[14px] w-[14px] stroke-[1.5] text-stone-300"
+						/>
+					</div>
+					<div class="mr-1.5 rounded bg-white/10 px-1.5 py-[3px]">
+						<ArrowUpIcon
+							class="h-[14px] w-[14px] rotate-180 stroke-[1.5] text-stone-300"
+						/>
+					</div>
+					<span class="text-xs text-white/70">to navigate</span>
+				</div>
+				<div class="flex items-center">
+					<div class="mr-1.5 rounded bg-white/10 px-1.5 py-[3px]">
+						<EnterIcon class="h-[14px] w-[14px] stroke-[1.5] text-stone-300" />
+					</div>
+					<span class="text-xs text-white/70">to select</span>
+				</div>
+				<div class="flex items-center">
+					<kbd
+						class="mr-1.5 select-none rounded bg-white/10 px-1.5 py-[3px] text-xs text-white/60"
+					>
+						esc
+					</kbd>
+					<span class="text-xs text-white/70">to close</span>
+				</div>
+			</div>
+		</DialogContent>
+	</Dialog>
 </template>

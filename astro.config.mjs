@@ -8,7 +8,10 @@ export default defineConfig({
 	server: {
 		port: 3000,
 	},
-	integrations: [vue({ appEntrypoint: "/src/pages/_app" }), tailwind()],
+	integrations: [
+		vue({ appEntrypoint: "/src/pages/_app", script: { defineModel: true } }),
+		tailwind(),
+	],
 	output: "hybrid",
 	vite: {
 		plugins: [

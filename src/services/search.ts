@@ -1,5 +1,6 @@
 import type { Native } from "@public/natives.json";
 import { queryOptions } from "@tanstack/vue-query";
+import type { MatchInfo } from "minisearch";
 
 export const searchNativesQueryOptions = (opts: {
 	query: string;
@@ -16,7 +17,16 @@ export const searchNativesQueryOptions = (opts: {
 				throw new Error("Failed to fetch");
 			}
 			return res.json() as Promise<
-				(Native & { hash: string; namespace: string })[]
+				{
+					native: Native & {
+						namespace: string;
+					};
+					id: any;
+					terms: string[];
+					queryTerms: string[];
+					score: number;
+					match: MatchInfo;
+				}[]
 			>;
 		},
 	});

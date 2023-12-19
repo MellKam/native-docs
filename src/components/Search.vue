@@ -10,6 +10,7 @@ import ArrowUpIcon from "@/icons/arrow-up.svg?component";
 import SearchMdIcon from "@/icons/search-md.svg?component";
 import EnterIcon from "@/icons/enter.svg?component";
 import CubeIcon from "@/icons/cube.svg?component";
+import NotFoundIcon from "@/icons/not-found.svg?component";
 import SearchFileIcon from "@/icons/search-file.svg?component";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -25,6 +26,7 @@ import {
 	DialogContent,
 	DialogPortal,
 	DialogOverlay,
+	DialogTrigger,
 } from "radix-vue";
 import { useDebounceFn } from "@vueuse/core";
 import {
@@ -90,12 +92,19 @@ onKeyStroke("Escape", () => {
 	}
 });
 
-type RecentSearch = { name: string; altName: string; hash: string };
+type RecentSearch = {
+	name: string;
+	altName: string;
+	hash: string;
+	namespace: string;
+};
 
 const recentSearches = useLocalStorage<RecentSearch[]>("recent_searches", [], {
 	serializer: StorageSerializers.object,
 	shallow: true,
 });
+
+const MAX_RECENT_SEARCH_ITEMS = 5;
 
 const prepentRecentSearchItem = (item: RecentSearch) => {
 	// remove from list if already in it
@@ -112,36 +121,30 @@ watch(isOpen, () => {
 		cachedRecentSearches.value = recentSearches.value;
 	}
 });
-
-const MAX_RECENT_SEARCH_ITEMS = 5;
 </script>
 
 <template>
-	<button
-		class="flex h-10 w-full max-w-[280px] items-center justify-between rounded-md border border-white/10 bg-stone-900 px-3 transition-colors hover:border-white/25"
-		@click="
-			() => {
-				searchTerm = '';
-				isOpen = true;
-			}
-		"
-	>
-		<div class="inline-flex items-center gap-2">
-			<SearchMdIcon class="h-5 w-5 stroke-[1.5] text-white/50" />
-			<span class="text-white/60">Search</span>
-		</div>
-		<kbd
-			class="rounded bg-white/10 px-1.5 py-0.5 text-xs font-medium text-white/60"
-			>Ctrl K</kbd
-		>
-	</button>
 	<DialogRoot v-model:open="isOpen">
+		<DialogTrigger
+			class="flex h-10 w-full max-w-[280px] items-center justify-between rounded-md border border-white/10 bg-stone-900 px-3 outline-none ring-0 ring-white/[.08] transition-[box-shadow,border-color] hover:border-white/25 focus-visible:border-white/25 focus-visible:ring-4"
+			@click="searchTerm = ''"
+		>
+			<div class="inline-flex items-center gap-2">
+				<SearchMdIcon class="h-5 w-5 stroke-[1.5] text-white/50" />
+				<span class="text-[15px] text-white/60">Search</span>
+			</div>
+			<kbd
+				class="rounded bg-white/10 px-1.5 py-0.5 text-xs font-medium text-white/60"
+			>
+				Ctrl K
+			</kbd>
+		</DialogTrigger>
 		<DialogPortal>
 			<DialogOverlay
 				class="fixed inset-0 z-20 bg-black/50 backdrop-blur-sm duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
 			/>
 			<DialogContent
-				class="fixed left-0 right-0 top-0 z-20 mx-auto mt-[min(80px,7.5svh)] flex max-h-[85vh] min-h-[360px] w-[90vw] max-w-xl flex-col overflow-hidden rounded-xl border border-stone-500 bg-stone-900 shadow-lg outline-none duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+				class="fixed left-0 right-0 top-0 z-20 mx-auto mt-[min(80px,7.5svh)] flex max-h-[85vh] min-h-[348px] w-[90vw] max-w-xl flex-col overflow-hidden rounded-xl border border-stone-500 bg-stone-900 shadow-lg outline-none duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
 			>
 				<Command
 					@update:search-term="
@@ -163,13 +166,13 @@ const MAX_RECENT_SEARCH_ITEMS = 5;
 					<CommandList class="mt-1.5">
 						<div
 							v-if="fetchStatus === 'fetching'"
-							class="flex items-center justify-center gap-2 py-9"
+							class="flex items-center justify-center gap-2 py-10"
 						>
 							<Spinner class="h-5 w-5" />
 							<span class="text-sm text-white/75">Searching...</span>
 						</div>
 						<CommandGroup
-							v-else-if="searchTerm === ''"
+							v-else-if="searchTerm === '' && cachedRecentSearches.length"
 							heading="Recent"
 							class="flex flex-col p-0"
 						>
@@ -192,25 +195,43 @@ const MAX_RECENT_SEARCH_ITEMS = 5;
 										>{{ recentSearch.name }}</span
 									>
 									<span
-										class="truncate text-xs leading-5 tracking-wide text-white/75 [&>mark]:bg-transparent [&>mark]:text-white/75 [&>mark]:underline [&>mark]:underline-offset-2"
-										>{{ recentSearch.altName }}</span
+										class="inline-flex items-center truncate text-xs leading-5 tracking-wide text-white/75"
 									>
+										<span>{{ recentSearch.altName }}</span>
+										<span
+											class="mx-[5px] inline-block h-1.5 w-1.5 rounded-full bg-white/30"
+										></span>
+										<span>{{ recentSearch.namespace }}</span>
+									</span>
 								</div>
 								<EnterIcon
 									class="mr-1 h-5 w-5 shrink-0 stroke-[1.5] text-white/60 opacity-0 transition-opacity group-data-[highlighted]:opacity-100"
 								/>
 							</CommandItem>
 						</CommandGroup>
-						<CommandEmpty
-							v-else-if="status === 'success' && searchResults?.length === 0"
-							class="flex flex-col items-center justify-center px-3 py-9 text-center"
+						<div
+							v-else-if="searchTerm === '' && cachedRecentSearches.length === 0"
+							class="flex flex-col items-center px-3 py-10 text-center"
 						>
 							<SearchFileIcon class="mb-2.5 h-11 w-11 text-stone-300" />
+							<span class="mb-1 text-lg font-medium"
+								>Let's start exploring!</span
+							>
+							<span class="max-w-sm text-sm text-white/60">
+								You can search for native functions by their names, description
+								or even specific hash.
+							</span>
+						</div>
+						<CommandEmpty
+							v-else-if="status === 'success' && searchResults?.length === 0"
+							class="flex flex-col items-center justify-center px-3 py-10 text-center"
+						>
+							<NotFoundIcon class="mb-3 h-11 w-11 stroke-[2] text-stone-300" />
 							<span class="mb-1 text-lg font-medium">
 								No results for
 								<span class="text-green-200">"{{ searchTerm }}"</span>
 							</span>
-							<span class="max-w-xs text-sm text-white/60">
+							<span class="max-w-sm text-sm text-white/60">
 								Try searching for something else and let's see if we can catch
 								it next time!
 							</span>
@@ -232,6 +253,7 @@ const MAX_RECENT_SEARCH_ITEMS = 5;
 											name: searchResult.native.name,
 											altName: searchResult.native.altName,
 											hash: searchResult.id,
+											namespace: searchResult.native.namespace,
 										})
 								"
 								class="group relative mb-1 flex cursor-pointer items-center last:mb-0"
@@ -246,9 +268,17 @@ const MAX_RECENT_SEARCH_ITEMS = 5;
 										v-html="getMarkedFieldValue(searchResult, 'name')"
 									></span>
 									<span
-										class="truncate text-xs leading-5 tracking-wide text-white/75 [&>mark]:bg-transparent [&>mark]:text-white/75 [&>mark]:underline [&>mark]:underline-offset-2"
-										v-html="getMarkedFieldValue(searchResult, 'altName')"
-									></span>
+										class="inline-flex items-center truncate text-xs leading-5 tracking-wide text-white/75"
+									>
+										<span
+											class="[&>mark]:bg-transparent [&>mark]:text-white/75 [&>mark]:underline [&>mark]:underline-offset-2"
+											v-html="getMarkedFieldValue(searchResult, 'altName')"
+										></span>
+										<span
+											class="mx-[5px] inline-block h-1.5 w-1.5 rounded-full bg-white/30"
+										></span>
+										<span>{{ searchResult.native.namespace }}</span>
+									</span>
 								</div>
 								<EnterIcon
 									class="mr-1 h-5 w-5 shrink-0 stroke-[1.5] text-white/60 opacity-0 transition-opacity group-data-[highlighted]:opacity-100"

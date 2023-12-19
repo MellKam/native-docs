@@ -107,8 +107,8 @@ const { title, description, keywords } = Astro.props;
 			}
 
 			::selection {
-				background-color: rgba(34, 215, 94, 0.5);
-				color: theme("colors.white");
+				background-color: #8EE2AA;
+				color: theme("colors.stone.950");
 			}
 		</style>
 	</head>
@@ -118,7 +118,7 @@ const { title, description, keywords } = Astro.props;
 					<Icon name="altv-logo" class="h-8 w-8" />
 					<span class="text-[17px] tracking-[-0.01em] font-medium leading-6">NativeDB</span>
 				</a>
-				<Search client:only />
+				<Search client:load />
 		</header>
 		<div class="flex flex-1 pt-[--header-height]">
 			<aside class="flex-[0_0_300px] bg-stone-800 border-r border-white/[.06]">

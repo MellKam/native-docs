@@ -3,6 +3,8 @@ import natives, { type Native } from "@public/natives.json";
 import MiniSearch from "minisearch";
 import { z } from "zod";
 
+export const prerender = false;
+
 const hashToNativeMap = new Map<string, Native & { namespace: string }>(
 	Object.entries(natives).flatMap(([namespace, namespaceItems]) => {
 		return Object.entries(namespaceItems).map(([hash, native]) => [

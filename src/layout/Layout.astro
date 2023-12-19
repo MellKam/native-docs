@@ -107,19 +107,18 @@ const { title, description, keywords } = Astro.props;
 			}
 
 			::selection {
-				background-color: rgba(0, 148, 50, 0.7);
+				background-color: rgba(34, 215, 94, 0.5);
 				color: theme("colors.white");
 			}
 		</style>
 	</head>
 	<body>
 		<header class="pointer-events-auto fixed inset-0 z-20 flex h-[--header-height] w-screen items-center border-b border-white/[.06] bg-stone-800 px-6 backdrop-blur-[20px] backdrop-saturate-150 sm:px-8">
-			<div>
-				<a href="/" class="inline-flex gap-3 items-center h-16">
+			<a href="/" class="inline-flex gap-3 items-center h-16">
 					<Icon name="altv-logo" class="h-8 w-8" />
 					<span class="text-[17px] tracking-[-0.01em] font-medium leading-6">NativeDB</span>
 				</a>
-			</div>
+				<Search client:only />
 		</header>
 		<div class="flex flex-1 pt-[--header-height]">
 			<aside class="flex-[0_0_300px] bg-stone-800 border-r border-white/[.06]">
@@ -129,7 +128,6 @@ const { title, description, keywords } = Astro.props;
 				<slot name="aside" />
 			</aside>
 			<main class="flex-1">
-				<Search client:only />
 				<slot />
 			</main>
 		</div>

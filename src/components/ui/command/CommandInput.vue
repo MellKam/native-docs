@@ -22,14 +22,12 @@ export default {
 
 <template>
 	<div
-		class="flex items-center justify-between gap-x-2 rounded-md border border-stone-500 bg-stone-900 px-4 ring-0 ring-green-400/[.15] transition-[box-shadow,border] data-[focused=true]:border-green-200 data-[focused=true]:ring-4"
+		class="flex items-center justify-between gap-x-2 rounded-md border border-stone-500 bg-stone-800 px-[14px] ring-0 ring-green-300/[.15] transition-[box-shadow,border] data-[focused=true]:border-green-200 data-[focused=true]:ring-4"
 		:data-focused="isFocused"
 		cmdk-input-wrapper
 	>
 		<div class="flex w-full items-center gap-2">
-			<SearchMdIcon
-				class="h-[22px] w-[22px] shrink-0 stroke-[1.5] text-white/50"
-			/>
+			<SearchMdIcon class="h-6 w-6 shrink-0 stroke-[1.5] text-white/50" />
 			<ComboboxInput
 				v-bind="{
 					placeholder: 'Search',

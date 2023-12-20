@@ -109,21 +109,26 @@ watch(isOpen, () => {
 });
 </script>
 
+<style>
+html[data-os="mac"] .search-trigger-shortcut-content::after {
+	content: "⌘ K";
+}
+
+.search-trigger-shortcut-content::after {
+	content: "Ctrl K";
+}
+</style>
+
 <template>
 	<DialogRoot v-model:open="isOpen">
 		<DialogTrigger
-			class="flex h-10 w-full max-w-[280px] items-center justify-between rounded-md border border-white/10 bg-stone-900 px-3 outline-none ring-0 ring-white/[.08] transition-[box-shadow,border-color] hover:border-white/25 focus-visible:border-white/25 focus-visible:ring-4"
+			class="search-trigger-shortcut-content flex h-10 w-full max-w-[280px] items-center justify-between rounded-md border border-white/10 bg-stone-900 px-3 outline-none ring-0 ring-white/[.08] transition-[box-shadow,border-color] after:block after:rounded after:bg-white/10 after:px-1.5 after:py-0.5 after:text-xs after:font-medium after:text-white/60 hover:border-white/25 focus-visible:border-white/25 focus-visible:ring-4"
 			@click="searchTerm = ''"
 		>
 			<div class="inline-flex items-center gap-2">
 				<SearchMdIcon class="h-5 w-5 stroke-[1.5] text-white/50" />
 				<span class="text-[15px] text-white/60">Search</span>
 			</div>
-			<kbd
-				class="rounded bg-white/10 px-1.5 py-0.5 text-xs font-medium text-white/60"
-			>
-				Ctrl K
-			</kbd>
 		</DialogTrigger>
 		<DialogPortal>
 			<DialogOverlay

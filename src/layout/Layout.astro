@@ -110,6 +110,13 @@ const { title, description, keywords } = Astro.props;
 				color: theme("colors.stone.950");
 			}
 		</style>
+		<script>
+			const isMac = navigator.userAgent.indexOf('Macintosh') !== -1;
+
+			if (isMac) {
+				document.documentElement.dataset.os = 'mac';
+			}
+		</script>
 	</head>
 	<body>
 		<header class="pointer-events-auto fixed inset-0 z-20 flex h-[--header-height] w-screen items-center border-b border-white/[.06] bg-stone-800 px-6 backdrop-blur-[20px] backdrop-saturate-150 sm:px-8">
@@ -130,7 +137,6 @@ const { title, description, keywords } = Astro.props;
 				<slot />
 			</main>
 		</div>
-		
 		<footer></footer>
 	</body>
 </html>

@@ -1,11 +1,11 @@
 ---
 import type { GetStaticPaths } from "astro";
-import { hashToNativeMap } from "@/services/natives";
-import natives from "@public/natives.json";
+import { hashToNativeFnMap } from "@/services/natives";
+import functions from "@public/functions.json";
 import Layout from "@/layout/Layout.astro";
 
 export const getStaticPaths = (() => {
-	return Object.entries(natives).flatMap(([_namespace, namespaceItems]) => {
+	return Object.entries(functions).flatMap(([_namespace, namespaceItems]) => {
 		return Object.keys(namespaceItems).map((hash) => {
 			return { params: { hash } };
 		});
@@ -16,16 +16,16 @@ export const prerender = true;
 
 const hash = Astro.params.hash!;
 
-const native = hashToNativeMap.get(hash);
-if (!native) {
+const nativeFn = hashToNativeFnMap.get(hash);
+if (!nativeFn) {
 	return Astro.redirect("/404");
 }
 ---
 
 <Layout
-	title={`alt:V NativeDB - ${native.altName}`}
+	title={`alt:V NativeDB - ${nativeFn.altName}`}
 	description=""
 	keywords=""
 >
-	<h1>{native.name}</h1>
+	<h1 class="">{nativeFn.name}</h1>
 </Layout>

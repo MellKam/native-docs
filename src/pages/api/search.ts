@@ -1,31 +1,19 @@
 import type { APIRoute } from "astro";
-import natives, { type Native } from "@public/natives.json";
+import natives from "@public/functions.json";
 import MiniSearch from "minisearch";
+import { hashToNativeFnMap } from "@/services/natives";
 import { z } from "zod";
 
 export const prerender = false;
-
-const hashToNativeMap = new Map<string, Native & { namespace: string }>(
-	Object.entries(natives).flatMap(([namespace, namespaceItems]) => {
-		return Object.entries(namespaceItems).map(([hash, native]) => [
-			hash,
-			{
-				...native,
-				namespace,
-			},
-		]);
-	}),
-);
 
 const minisearch = new MiniSearch<{
 	id: string;
 	namespace: string;
 	name: string;
-	altName: string;
 	hashes: string[];
 	oldNames: string[];
 }>({
-	fields: ["name", "altName", "hashes", "oldNames", "comment", "jhash"],
+	fields: ["name", "hashes", "oldNames", "comment", "jhash"],
 });
 
 minisearch.addAll(
@@ -37,7 +25,6 @@ minisearch.addAll(
 				hashes: Object.values(native.hashes),
 				namespace,
 				name: native.name,
-				altName: native.altName,
 				comment: native.comment,
 				oldNames: [...native.oldNames, ...(native.old_names || [])],
 			};
@@ -52,15 +39,17 @@ const searchParamsSchema = z.object({
 
 export const GET: APIRoute = (ctx) => {
 	try {
-		const result = searchParamsSchema.safeParse(
+		const searchParamsResult = searchParamsSchema.safeParse(
 			Object.fromEntries(ctx.url.searchParams),
 		);
-		if (!result.success) {
-			return new Response(JSON.stringify(result.error.issues), { status: 400 });
+		if (!searchParamsResult.success) {
+			return new Response(JSON.stringify(searchParamsResult.error.issues), {
+				status: 400,
+			});
 		}
-		const { limit, query } = result.data;
+		const { limit, query } = searchParamsResult.data;
 
-		const searchResults = query.startsWith("0x")
+		const searchResults = query.trim().startsWith("0x")
 			? // search by hashes only
 				minisearch.search(query, {
 					fields: ["id", "hashes", "jhash"],
@@ -72,19 +61,19 @@ export const GET: APIRoute = (ctx) => {
 				minisearch.search(query, {
 					fuzzy: true,
 					prefix: true,
-					fields: ["name", "oldName", "altName", "comment"],
+					fields: ["name", "oldName", "comment", "namespace"],
 					boost: { comment: 0.4 },
 					filter: (searchResult) => searchResult.score > 1,
 				});
 
-		const resultNatives = searchResults.slice(0, limit).map((result) => {
+		const results = searchResults.slice(0, limit).map((result) => {
 			return {
 				...result,
-				native: hashToNativeMap.get(result.id)!,
+				function: hashToNativeFnMap.get(result.id)!,
 			};
 		});
 
-		return new Response(JSON.stringify(resultNatives));
+		return new Response(JSON.stringify(results));
 	} catch (error) {
 		return new Response(null, {
 			status: 500,

@@ -6,13 +6,13 @@ import {
 import { useQuery, queryOptions } from "@tanstack/vue-query";
 import { ref, computed, watch } from "vue";
 import ClockRewindIcon from "@/icons/clock-rewind.svg?component";
+import LoaderIcon from "@/icons/loader.svg?component";
 import ArrowUpIcon from "@/icons/arrow-up.svg?component";
 import SearchMdIcon from "@/icons/search-md.svg?component";
 import EnterIcon from "@/icons/enter.svg?component";
 import CubeIcon from "@/icons/cube.svg?component";
 import NotFoundIcon from "@/icons/not-found.svg?component";
 import SearchFileIcon from "@/icons/search-file.svg?component";
-import { Spinner } from "@/components/ui/spinner";
 import {
 	Command,
 	CommandInput,
@@ -29,27 +29,24 @@ import {
 	DialogTrigger,
 } from "radix-vue";
 import { useDebounceFn } from "@vueuse/core";
-import {
-	onKeyStroke,
-	useLocalStorage,
-	StorageSerializers,
-	useMagicKeys,
-} from "@vueuse/core";
+import { onKeyStroke, useLocalStorage, StorageSerializers } from "@vueuse/core";
 
-const { Ctrl_K } = useMagicKeys({
-	passive: false,
-	onEventFired(e) {
-		if (e.ctrlKey && e.key === "k" && e.type === "keydown") {
-			e.preventDefault();
-		}
-	},
+const isOpen = ref(false);
+
+onKeyStroke("Escape", (event: KeyboardEvent) => {
+	if (event.type !== "keydown") return;
+	if (isOpen.value) {
+		isOpen.value = false;
+	}
 });
 
-if (Ctrl_K) {
-	watch(Ctrl_K, () => {
-		isOpen.value = true;
-	});
-}
+onKeyStroke(["k"], (event: KeyboardEvent) => {
+	if (event.type !== "keydown") return;
+	if (event.ctrlKey || event.metaKey) {
+		event.preventDefault();
+		isOpen.value = !isOpen.value;
+	}
+});
 
 const searchTerm = ref("");
 const setSearchTermWithDebounce = useDebounceFn((value: string) => {
@@ -70,31 +67,19 @@ const {
 	}),
 );
 
-const getMarkedFieldValue = (
-	match: SearchNativesResult,
-	fieldName: "name" | "altName",
-) => {
+const getMarkedFieldValue = (match: SearchNativesResult, fieldName: "name") => {
 	const fields = new Set(Object.values(match.match).flat(1));
 	if (!fields.has(fieldName)) {
-		return match.native[fieldName];
+		return match.function[fieldName];
 	}
-	return match.native[fieldName].replaceAll(
+	return match.function[fieldName].replaceAll(
 		new RegExp("(" + match.queryTerms.join("|") + ")", "ig"),
 		"<mark>$1</mark>",
 	);
 };
 
-const isOpen = ref(false);
-
-onKeyStroke("Escape", () => {
-	if (isOpen.value) {
-		isOpen.value = false;
-	}
-});
-
 type RecentSearch = {
 	name: string;
-	altName: string;
 	hash: string;
 	namespace: string;
 };
@@ -118,6 +103,7 @@ const cachedRecentSearches = ref(recentSearches.value);
 watch(isOpen, () => {
 	// update recent list only on the next open
 	if (isOpen.value) {
+		searchTerm.value = "";
 		cachedRecentSearches.value = recentSearches.value;
 	}
 });
@@ -147,32 +133,26 @@ watch(isOpen, () => {
 				class="fixed left-0 right-0 top-0 z-20 mx-auto mt-[min(80px,7.5svh)] flex max-h-[85vh] min-h-[348px] w-[90vw] max-w-xl flex-col overflow-hidden rounded-xl border border-stone-500 bg-stone-900 shadow-lg outline-none duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
 			>
 				<Command
-					@update:search-term="
-						(value) => {
-							if (!isOpen) return;
-							if (value === '') {
-								// set immediately, no need to wait
-								searchTerm = '';
-							} else {
-								setSearchTermWithDebounce(value);
-							}
-						}
-					"
+					@update:search-term="setSearchTermWithDebounce"
 					:search-term="searchTerm"
 					class="flex-1 rounded-none bg-[linear-gradient(180deg,#1C1C1C_0%,#191919_100%)] px-3 pb-4 pt-3 sm:pb-6"
 					:filter-function="(values) => values"
 				>
-					<CommandInput :model-value="searchTerm" />
+					<CommandInput :model-value="searchTerm">
+						<template #search-icon>
+							<LoaderIcon
+								v-if="fetchStatus === 'fetching'"
+								class="h-6 w-6 shrink-0 animate-spin stroke-[1.5] text-white/50"
+							/>
+							<SearchMdIcon
+								v-else
+								class="h-6 w-6 shrink-0 stroke-[1.5] text-white/50"
+							/>
+						</template>
+					</CommandInput>
 					<CommandList class="mt-1.5">
-						<div
-							v-if="fetchStatus === 'fetching'"
-							class="flex items-center justify-center gap-2 py-10"
-						>
-							<Spinner class="h-5 w-5" />
-							<span class="text-sm text-white/75">Searching...</span>
-						</div>
 						<CommandGroup
-							v-else-if="searchTerm === '' && cachedRecentSearches.length"
+							v-if="cachedRecentSearches.length && searchTerm === ''"
 							heading="Recent"
 							class="flex flex-col p-0"
 						>
@@ -192,16 +172,13 @@ watch(isOpen, () => {
 								<div class="mx-3 flex flex-[1_1_auto] flex-col truncate">
 									<span
 										class="text-sm font-medium text-white [&>mark]:rounded-sm [&>mark]:bg-green-200/80"
-										>{{ recentSearch.name }}</span
 									>
+										{{ recentSearch.name }}
+									</span>
 									<span
 										class="inline-flex items-center truncate text-xs leading-5 tracking-wide text-white/75"
 									>
-										<span>{{ recentSearch.altName }}</span>
-										<span
-											class="mx-[5px] inline-block h-1.5 w-1.5 rounded-full bg-white/30"
-										></span>
-										<span>{{ recentSearch.namespace }}</span>
+										{{ recentSearch.namespace }}
 									</span>
 								</div>
 								<EnterIcon
@@ -210,7 +187,7 @@ watch(isOpen, () => {
 							</CommandItem>
 						</CommandGroup>
 						<div
-							v-else-if="searchTerm === '' && cachedRecentSearches.length === 0"
+							v-else-if="cachedRecentSearches.length === 0 && searchTerm === ''"
 							class="flex flex-col items-center px-3 py-10 text-center"
 						>
 							<SearchFileIcon class="mb-2.5 h-11 w-11 text-stone-300" />
@@ -250,10 +227,9 @@ watch(isOpen, () => {
 								@select="
 									() =>
 										prepentRecentSearchItem({
-											name: searchResult.native.name,
-											altName: searchResult.native.altName,
+											name: searchResult.function.name,
 											hash: searchResult.id,
-											namespace: searchResult.native.namespace,
+											namespace: searchResult.function.namespace,
 										})
 								"
 								class="group relative mb-1 flex cursor-pointer items-center last:mb-0"
@@ -270,14 +246,7 @@ watch(isOpen, () => {
 									<span
 										class="inline-flex items-center truncate text-xs leading-5 tracking-wide text-white/75"
 									>
-										<span
-											class="[&>mark]:bg-transparent [&>mark]:text-white/75 [&>mark]:underline [&>mark]:underline-offset-2"
-											v-html="getMarkedFieldValue(searchResult, 'altName')"
-										></span>
-										<span
-											class="mx-[5px] inline-block h-1.5 w-1.5 rounded-full bg-white/30"
-										></span>
-										<span>{{ searchResult.native.namespace }}</span>
+										{{ searchResult.function.namespace }}
 									</span>
 								</div>
 								<EnterIcon

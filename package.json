@@ -15,7 +15,7 @@
 		"@astrojs/node": "^7.0.1",
 		"@astrojs/tailwind": "^5.0.3",
 		"@astrojs/vue": "^4.0.4",
-		"@tanstack/vue-query": "^5.14.1",
+		"@tanstack/vue-query": "^5.14.4",
 		"@vueuse/core": "^10.7.0",
 		"astro": "^4.0.6",
 		"astro-icon": "^0.8.2",
@@ -23,11 +23,11 @@
 		"minisearch": "^6.3.0",
 		"radix-vue": "^1.2.5",
 		"tailwind-merge": "^2.1.0",
-		"tailwindcss": "^3.3.7",
+		"tailwindcss": "^3.4.0",
 		"tailwindcss-animate": "^1.0.7",
 		"typescript": "^5.3.3",
 		"vite-svg-loader": "^5.1.0",
-		"vue": "^3.3.12",
+		"vue": "^3.3.13",
 		"zod": "^3.22.4"
 	},
 	"devDependencies": {

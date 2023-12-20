@@ -1,9 +1,9 @@
-declare module "@public/natives.json" {
-	export type Native = {
+declare module "@public/functions.json" {
+	export type NativeFunction = {
 		name: string;
 		jhash: string;
 		comment: string;
-		params: NativeParam[];
+		params: NativeFunctionParams[];
 		build: number;
 		results: string[];
 		hashes: Record<number, string>;
@@ -12,14 +12,17 @@ declare module "@public/natives.json" {
 		old_names?: string[];
 	};
 
-	export type NativeParam = {
+	export type NativeFunctionParams = {
 		type: string;
 		name: string;
 		ref?: boolean;
 	};
 
-	export type NativeDB = Record<string, Record<string, Native>>;
+	export type NativeFunctionsDB = Record<
+		string, // namespace
+		Record<string, NativeFunction> // hash -> function
+	>;
 
-	const natives: NativeDB;
-	export default natives;
+	const db: NativeFunctionsDB;
+	export default db;
 }

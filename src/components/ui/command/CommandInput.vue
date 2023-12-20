@@ -27,7 +27,9 @@ export default {
 		cmdk-input-wrapper
 	>
 		<div class="flex w-full items-center gap-2">
-			<SearchMdIcon class="h-6 w-6 shrink-0 stroke-[1.5] text-white/50" />
+			<slot name="search-icon">
+				<SearchMdIcon class="h-6 w-6 shrink-0 stroke-[1.5] text-white/50" />
+			</slot>
 			<ComboboxInput
 				v-bind="{
 					placeholder: 'Search',

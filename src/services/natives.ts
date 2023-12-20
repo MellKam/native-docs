@@ -1,17 +1,16 @@
-import natives, { type Native } from "@public/natives.json";
+import natives, { type NativeFunction } from "@public/functions.json";
 
-export const hashToNativeMap = new Map<
+export const hashToNativeFnMap = new Map<
 	string,
-	Native & { namespace: string; hash: string }
+	NativeFunction & { namespace: string }
 >(
 	Object.entries(natives).flatMap(([namespace, namespaceItems]) => {
-		return Object.entries(namespaceItems).map(([hash, native]) => [
+		return Object.entries(namespaceItems).map(([hash, nativeFn]) => [
 			hash,
 			{
-				...native,
-				hash,
+				...nativeFn,
 				namespace,
 			},
 		]);
-	})
+	}),
 );

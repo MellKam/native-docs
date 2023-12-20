@@ -1,10 +1,10 @@
-import type { Native } from "@public/natives.json";
+import type { NativeFunction } from "@public/functions.json";
 import { queryOptions } from "@tanstack/vue-query";
 import type { SearchResult } from "minisearch";
 
 export type SearchNativesResult = SearchResult & {
 	id: string;
-	native: Native & {
+	function: NativeFunction & {
 		namespace: string;
 	};
 };
@@ -17,7 +17,7 @@ export const searchNativesQueryOptions = (opts: {
 		queryKey: ["natives-search", opts.query, opts.limit || 5],
 		queryFn: async () => {
 			const res = await fetch(
-				`/api/natives?query=${opts.query}&limit=${opts.limit || 5}`,
+				`/api/search?query=${opts.query}&limit=${opts.limit || 5}`,
 			);
 			if (!res.ok) {
 				throw new Error(`${res.statusText} ${res.status}: ${await res.text()}`);

@@ -6,6 +6,7 @@
 		"noUncheckedIndexedAccess": true,
 		"noUnusedParameters": true,
 		"noUnusedLocals": true,
+		"noImplicitAny": true,
 		"paths": {
 			"@public/*": ["public/*"],
 			"@/*": ["src/*"]

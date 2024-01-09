@@ -1,8 +1,9 @@
 ---
 import { ViewTransitions } from "astro:transitions";
 import { Icon } from "astro-icon";
-import Search from "@/components/Search.vue"
-import TestTreeView from "@/components/TestTreeView.vue"
+import Search from "@/components/SearchDialog.vue"
+import AsideNavTree from "@/components/AsideNavTree.vue"
+import nativeFunctionsDb from "@public/functions.json"
 
 type Props = {
 	title: string;
@@ -121,18 +122,27 @@ const { title, description, keywords } = Astro.props;
 	<body>
 		<header class="pointer-events-auto fixed inset-0 z-20 flex h-[--header-height] w-screen items-center border-b border-white/[.06] bg-stone-800 px-6 backdrop-blur-[20px] backdrop-saturate-150 sm:px-8">
 			<a href="/" class="inline-flex gap-3 items-center h-16">
-					<Icon name="altv-logo" class="h-8 w-8" />
-					<span class="text-[17px] tracking-[-0.01em] font-medium leading-6">NativeDB</span>
-				</a>
-				<Search client:load />
+				<Icon name="altv-logo" class="h-8 w-8" />
+				<span class="text-[17px] tracking-[-0.01em] font-medium leading-6">NativeDB</span>
+			</a>
+			<Search client:load />
 		</header>
+		<style>
+			aside {
+				scrollbar-width: thin;
+			}
+
+			aside::-webkit-scrollbar {
+				width: 6px;
+			}
+			
+			aside::-webkit-scrollbar-thumb {
+				border-radius: 10px;
+				background-color: rgba(255,255,255,0.3);
+			}
+			</style>
 		<div class="flex flex-1 pt-[--header-height]">
-			<aside class="flex-[0_0_300px] bg-stone-800 border-r border-white/[.06]">
-				<nav class="p-2 flex flex-col">
-					<TestTreeView client:load />
-				</nav>
-				<slot name="aside" />
-			</aside>
+			<AsideNavTree client:load namespaces={Object.keys(nativeFunctionsDb)} transition:persist />
 			<main class="flex-1">
 				<slot />
 			</main>

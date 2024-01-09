@@ -44,6 +44,7 @@ export const GET: APIRoute = (ctx) => {
 		);
 		if (!searchParamsResult.success) {
 			return new Response(JSON.stringify(searchParamsResult.error.issues), {
+				headers: { "Content-Type": "application/json" },
 				status: 400,
 			});
 		}
@@ -73,7 +74,9 @@ export const GET: APIRoute = (ctx) => {
 			};
 		});
 
-		return new Response(JSON.stringify(results));
+		return new Response(JSON.stringify(results), {
+			headers: { "Content-Type": "application/json" },
+		});
 	} catch (error) {
 		return new Response(null, {
 			status: 500,

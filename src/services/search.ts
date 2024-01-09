@@ -15,9 +15,10 @@ export const searchNativesQueryOptions = (opts: {
 }) =>
 	queryOptions({
 		queryKey: ["natives-search", opts.query, opts.limit || 5],
+		staleTime: Infinity,
 		queryFn: async () => {
 			const res = await fetch(
-				`/api/search?query=${opts.query}&limit=${opts.limit || 5}`,
+				`/api/natives/search?query=${opts.query}&limit=${opts.limit || 5}`,
 			);
 			if (!res.ok) {
 				throw new Error(`${res.statusText} ${res.status}: ${await res.text()}`);
